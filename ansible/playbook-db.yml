@@ -1,0 +1,52 @@
+- hosts: db
+  become: true
+
+  tasks:
+    - name: Install PostgreSQL
+      apt:
+        name: postgresql
+        state: present
+        update_cache: yes
+
+    - name: Start PostgreSQL
+      systemd:
+        name: postgresql
+        enabled: yes
+        state: started
+
+    - name: Enable PostgreSQL listen on all interfaces
+      lineinfile:
+        path: /etc/postgresql/16/main/postgresql.conf
+        regexp: "^#?listen_addresses"
+        line: "listen_addresses = '*'"
+
+    - name: Allow PostgreSQL remote access
+      lineinfile:
+        path: /etc/postgresql/16/main/pg_hba.conf
+        line: "host    all             all             192.168.252.0/24          md5"
+
+    - name: Restart PostgreSQL
+      service:
+        name: postgresql
+        state: restarted
+
+    - name: Copy setup_db script
+      copy:
+        src: ../app/setup_db.sh
+        dest: /home/ubuntu/setup_db.sh
+        mode: '0755'
+
+    - name: Run setup_db script
+      command: /home/ubuntu/setup_db.sh
+
+    - name: Create student directory
+      file:
+        path: /home/student
+        state: directory
+        mode: '0755'
+
+    - name: Create gradebook file
+      copy:
+        dest: /home/student/gradebook
+        content: "29"
+        mode: '0644'

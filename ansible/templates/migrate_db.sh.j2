@@ -1,0 +1,40 @@
+#!/bin/bash
+
+echo "Running DB migration..."
+
+export PGPASSWORD=12345678
+
+psql -h {{ hostvars[groups['db'][0]].ansible_host }} -U app -d mywebapp <<EOF
+
+CREATE TABLE IF NOT EXISTS items (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(255) UNIQUE NOT NULL,
+    quantity INTEGER NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+DO \$\$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_constraint
+        WHERE conname = 'items_name_key'
+    ) THEN
+        ALTER TABLE items
+        ADD CONSTRAINT items_name_key UNIQUE (name);
+    END IF;
+END
+\$\$;
+
+INSERT INTO items (name, quantity, created_at)
+VALUES
+  ('Laptop', 10, NOW()),
+  ('Phone', 25, NOW()),
+  ('Keyboard', 15, NOW()),
+  ('Mouse', 30, NOW()),
+  ('Monitor', 8, NOW())
+ON CONFLICT (name) DO NOTHING;
+
+EOF
+
+echo "Migration done!"

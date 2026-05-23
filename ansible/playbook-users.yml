@@ -1,0 +1,58 @@
+- hosts: all
+  become: true
+
+  tasks:
+    - name: Create teacher user
+      user:
+        name: teacher
+        password: "$6$DoyhdZI0Thm4d0Hv$VY.w.Fgjrt7NrWPursTofu62VI1xiJ9JyHBULlJ4Yy34dPHVqPRT45RH9oB9Qs3/SqFXYkNnkHzpfFgQaQkQW0"
+        groups: sudo
+        append: yes
+        shell: /bin/bash
+
+    - name: Create operator user
+      user:
+        name: operator
+        password: "$6$DoyhdZI0Thm4d0Hv$VY.w.Fgjrt7NrWPursTofu62VI1xiJ9JyHBULlJ4Yy34dPHVqPRT45RH9oB9Qs3/SqFXYkNnkHzpfFgQaQkQW0"
+        shell: /bin/bash
+
+    - name: Enable password authentication
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?PasswordAuthentication'
+        line: 'PasswordAuthentication yes'
+
+    - name: Enable keyboard interactive authentication
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?KbdInteractiveAuthentication'
+        line: 'KbdInteractiveAuthentication yes'
+
+    - name: Enable PAM
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?UsePAM'
+        line: 'UsePAM yes'
+
+    - name: Restart ssh
+      service:
+        name: ssh
+        state: restarted
+
+- hosts: workers
+  become: true
+
+  tasks:
+    - name: Create app user
+      user:
+        name: app
+        system: yes
+        shell: /usr/sbin/nologin
+
+    - name: Allow operator limited sudo
+      copy:
+        dest: /etc/sudoers.d/operator
+        content: |
+          operator ALL=(ALL) NOPASSWD: /usr/bin/docker
+          operator ALL=(ALL) NOPASSWD: /usr/bin/systemctl reload nginx
+        mode: '0440'

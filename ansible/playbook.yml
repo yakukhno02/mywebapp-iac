@@ -1,0 +1,91 @@
+- hosts: worker-tf
+  become: true
+
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Install PostgreSQL client
+      apt:
+        name: postgresql-client
+        state: present
+
+    - name: Install Docker dependencies
+      apt:
+        name:
+          - ca-certificates
+          - curl
+          - gnupg
+        state: present
+
+    - name: Install docker
+      apt:
+        name:
+          - docker.io
+          - docker-compose-v2
+        state: present
+
+    - name: Start docker
+      service:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Add ubuntu user to docker group
+      user:
+        name: ubuntu
+        groups: docker
+        append: yes
+
+    - name: Copy application
+      copy:
+        src: ../app/
+        dest: /home/ubuntu/mywebapp/
+
+    - name: Generate docker-compose
+      template:
+        src: templates/docker-compose.yml.j2
+        dest: /home/ubuntu/mywebapp/docker-compose.yml
+
+    - name: Run docker compose
+      shell: docker compose up -d --build
+      args:
+        chdir: /home/ubuntu/mywebapp
+
+    - name: Restart nginx container
+      shell: docker compose restart nginx
+      args:
+        chdir: /home/ubuntu/mywebapp
+
+    - name: Generate migrate script
+      template:
+        src: templates/migrate_db.sh.j2
+        dest: /home/ubuntu/mywebapp/migrate_db.sh
+        mode: '0755'
+
+    - name: Wait before migrations
+      pause:
+        seconds: 15
+
+    - name: Make migrate script executable
+      file:
+        path: /home/ubuntu/mywebapp/migrate_db.sh
+        mode: '0755'
+
+    - name: Run migrations
+      shell: ./migrate_db.sh
+      args:
+        chdir: /home/ubuntu/mywebapp
+
+    - name: Create student directory
+      file:
+        path: /home/student
+        state: directory
+        mode: '0755'
+
+    - name: Create gradebook file
+      copy:
+        dest: /home/student/gradebook
+        content: "29"
+        mode: '0644'

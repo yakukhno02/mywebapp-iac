@@ -1,0 +1,17 @@
+# Terraform
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+
+# Ansible
+ansible/inventory.ini
+
+# Secrets
+.env
+*.pem
+*.key
+*.pub
+
+# macOS
+.DS_Store

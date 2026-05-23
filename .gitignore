@@ -15,3 +15,13 @@ ansible/inventory.ini
 
 # macOS
 .DS_Store
+
+# Maven
+app/.mvn/
+app/mvnw
+app/mvnw.cmd
+
+# IDE
+.idea/
+.vscode/
+

@@ -64,9 +64,11 @@
         dest: /home/ubuntu/mywebapp/migrate_db.sh
         mode: '0755'
 
-    - name: Wait before migrations
-      pause:
-        seconds: 15
+    - name: Wait for PostgreSQL
+      wait_for:
+        host: "{{ hostvars[groups['db'][0]].ansible_host }}"
+        port: 5432
+        timeout: 120
 
     - name: Make migrate script executable
       file:

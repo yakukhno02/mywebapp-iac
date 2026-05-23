@@ -1,0 +1,19 @@
+#!/bin/bash
+
+echo "Running DB migration..."
+
+export PGPASSWORD=12345678
+
+psql -h {{ hostvars[groups['db'][0]].ansible_host }} -U app -d mywebapp <<EOF
+
+INSERT INTO items (name, quantity, created_at)
+VALUES
+  ('Laptop', 10, NOW()),
+  ('Phone', 25, NOW()),
+  ('Keyboard', 15, NOW()),
+  ('Mouse', 30, NOW()),
+  ('Monitor', 8, NOW());
+
+EOF
+
+echo "Migration done!"
